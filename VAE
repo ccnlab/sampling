@@ -56,8 +56,8 @@ class VAE(nn.Module):
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5*logvar)
        
-       #eps = torch.randn_like(std) #this is a tensor
-        eps = 0.5*(mu**2 + logvar**2) #to replace rand noise
+        b = torch.distributions.Bernoulli(torch.empty_like(std).uniform_(0,1))
+        eps = b.sample() #to replace rand noise
        
        return mu + eps*std
 
