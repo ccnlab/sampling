@@ -98,8 +98,8 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Type":               "NoNoise", // now, no noise is better
 					"Layer.Act.Clamp.Rate":               "120",     // 180 default, 120 best here
 					"Layer.Act.Dt.LongAvgTau":            "20",      // 20 > higher for objrec, lvis
-					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02",    // 0.01 for lvis, needs faster here
-					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01",    // 0.005 for lvis, needs faster here
+					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.01",    // 0.01 for lvis, needs faster here
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.005",    // 0.005 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
 					"Layer.Learn.RLrate.On":              "true",
@@ -139,16 +139,16 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Encoding", Desc: "Encoding uses output's original settings as a base",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":       "1.1",   // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.Layer.Gi":       "1.2",   // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
 					"Prjn.Com.Delay":            "2",   // 1 == 2 = 3
-					"Prjn.Learn.Lrate.Base":     "0.2", // 0.04 def, .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":      ".1",  // .2 is fast enough for DreamVar .01..  .1 = more constraint
+					"Prjn.Learn.Lrate.Base":     "0.1", // 0.04 def, .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Adapt.Lrate":      "0.1",  // .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Adapt.SigGain":    "6",
 					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable -- better with .2 adapt lrate
-					"Prjn.SWt.Adapt.CovarLrate": "0.1",
+					"Prjn.SWt.Adapt.CovarLrate": "0.0",
 					"Prjn.SWt.Init.SPct":        "1",   // .5 ok here, 1 best for larger nets: objrec, lvis
 					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
 					"Prjn.SWt.Limit.Min":        "0.2",
@@ -157,7 +157,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.XCal.DThr":      "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":      "0.1",    // local opt
 					"Prjn.Learn.XCal.DWtThr":    "0.0001", // 0.0001 > 0.001 in objrec
-					"Prjn.Learn.XCal.SubMean":   "0",      // 1 > 0.9 now..
+					"Prjn.Learn.XCal.SubMean":   "1",      // 1 > 0.9 now..
 				}},
 			{Sel: "#InputToEncoding", Desc: "Shortcuts",
 				Params: params.Params{
@@ -184,25 +184,6 @@ var ParamSets = params.Sets{
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
 			{Sel: "Sim", Desc: "best params always finish in this time",
-				Params: params.Params{
-					"Sim.MaxEpcs": "1000",
-				}},
-		},
-	}},
-	{Name: "WtBalNoSubMean", Desc: "original config", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "wtbal, no submean",
-				Params: params.Params{
-					"Prjn.Learn.WtBal.On":     "true", // on = much better!
-					"Prjn.Learn.XCal.SubMean": "0",
-				}},
-			{Sel: "Layer", Desc: "go back to default",
-				Params: params.Params{
-					"Layer.Learn.TrgAvgAct.Rate": "0",
-				}},
-		},
-		"Sim": &params.Sheet{ // sim params apply to sim object
-			{Sel: "Sim", Desc: "takes longer -- generally doesn't finish..",
 				Params: params.Params{
 					"Sim.MaxEpcs": "1000",
 				}},
@@ -367,9 +348,9 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "AE")
 	inp := net.AddLayer2D("Input", 28, 28, emer.Input)
-	hid1 := net.AddLayer2D("Hidden1", 40, 40, emer.Hidden)
-	enc := net.AddLayer2D("Encoding", 7, 7, emer.Hidden)
-	hid2 := net.AddLayer2D("Hidden2", 40, 40, emer.Hidden)
+	hid1 := net.AddLayer2D("Hidden1", 12, 12, emer.Hidden)
+	enc := net.AddLayer2D("Encoding", 5, 5, emer.Hidden)
+	hid2 := net.AddLayer2D("Hidden2", 12, 12, emer.Hidden)
 	out := net.AddLayer2D("Output", 28, 28, emer.Target)
 
 	// use this to position layers relative to each other
@@ -382,10 +363,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(inp, hid1, full, emer.Forward)
 	net.ConnectLayers(hid1, enc, full, emer.Forward)
 	net.ConnectLayers(enc, hid2, full, emer.Forward)
-	net.BidirConnectLayers(hid2, out, full)
+	net.ConnectLayers(hid2, out, full, emer.Forward)
 
     rndcut := prjn.NewUnifRnd()
-    rndcut.PCon = 0.1
+    rndcut.PCon = 0.05
 	net.ConnectLayers(inp, enc, rndcut, emer.Forward)
 	
 	// net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
